@@ -247,3 +247,157 @@ def eval_model(device, model, test_loader, label, id2label):
     if label is not None:
         ax.set_title(f"Confusion matrix – {label}")
     plt.show()
+
+
+# Add these functions to your existing utils.py file
+
+def save_results_to_json(results, filename):
+    """
+    Save training results to JSON file.
+    
+    Args:
+        results (dict): Dictionary containing results
+        filename (str): Path to save the JSON file
+    """
+    import json
+    import os
+    from pathlib import Path
+    
+    # Create directory if it doesn't exist
+    os.makedirs(Path(filename).parent, exist_ok=True)
+    
+    # Save to file
+    with open(filename, 'w') as f:
+        json.dump(results, f, indent=2)
+        
+    print(f"Results saved to {filename}")
+
+
+def plot_training_history(history, title="Training History", figsize=(12, 5), save_path=None):
+    """
+    Plot training and validation metrics.
+    
+    Args:
+        history (dict): Dictionary containing 'train_loss', 'val_loss', 'train_acc', 'val_acc'
+        title (str): Plot title
+        figsize (tuple): Figure size
+        save_path (str, optional): Path to save the figure
+    """
+    import matplotlib.pyplot as plt
+    
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=figsize)
+    
+    # Plot loss
+    ax1.plot(history['train_loss'], label='Train')
+    ax1.plot(history['val_loss'], label='Validation')
+    ax1.set_xlabel('Epoch')
+    ax1.set_ylabel('Loss')
+    ax1.set_title('Loss Curves')
+    ax1.legend()
+    ax1.grid(True)
+    
+    # Plot accuracy
+    ax2.plot(history['train_acc'], label='Train')
+    ax2.plot(history['val_acc'], label='Validation')
+    ax2.set_xlabel('Epoch')
+    ax2.set_ylabel('Accuracy')
+    ax2.set_title('Accuracy Curves')
+    ax2.legend()
+    ax2.grid(True)
+    
+    plt.suptitle(title)
+    plt.tight_layout()
+    
+    if save_path:
+        plt.savefig(save_path)
+    
+    plt.show()
+
+
+def plot_confusion_matrix(cm, class_names, title="Confusion Matrix", figsize=(10, 8), save_path=None):
+    """
+    Plot confusion matrix.
+    
+    Args:
+        cm (array): Confusion matrix array
+        class_names (list): List of class names
+        title (str): Plot title
+        figsize (tuple): Figure size
+        save_path (str, optional): Path to save the figure
+    """
+    import matplotlib.pyplot as plt
+    import numpy as np
+    import seaborn as sns
+    
+    # Normalize confusion matrix
+    cm_normalized = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+    
+    # Plot
+    plt.figure(figsize=figsize)
+    sns.heatmap(cm_normalized, annot=True, fmt='.2f', cmap='Blues',
+                xticklabels=class_names, yticklabels=class_names)
+    plt.xlabel('Predicted')
+    plt.ylabel('True')
+    plt.title(title)
+    plt.tight_layout()
+    
+    if save_path:
+        plt.savefig(save_path)
+    
+    plt.show()
+
+
+def create_results_visualizations(results_file, output_dir=None):
+    """
+    Create visualizations from a results JSON file.
+    
+    Args:
+        results_file (str): Path to results JSON file
+        output_dir (str, optional): Directory to save visualizations
+    """
+    import json
+    import os
+    import numpy as np
+    from pathlib import Path
+    
+    # Load results
+    with open(results_file, 'r') as f:
+        results = json.load(f)
+    
+    # Set output directory
+    if output_dir is None:
+        output_dir = Path(results_file).parent / 'visualizations'
+    
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # Extract data
+    history = results['history']
+    id2label = results['id2label']
+    cm = np.array(results['confusion_matrix'])
+    config = results['config']
+    
+    # Create base filename
+    base_filename = Path(results_file).stem
+    
+    # Create model name for title
+    model_name = f"{config['model_type'].upper()} (h={config['hidden_size']}, l={config['num_layers']})"
+    if config['bidirectional']:
+        model_name += " Bidirectional"
+    
+    # Plot training history
+    plot_training_history(
+        history, 
+        title=f"Training History - {model_name}",
+        save_path=f"{output_dir}/{base_filename}_history.png"
+    )
+    
+    # Plot confusion matrix
+    class_names = [id2label[str(i)] for i in range(len(id2label))]
+    plot_confusion_matrix(
+        cm, 
+        class_names=class_names,
+        title=f"Confusion Matrix - {model_name}",
+        save_path=f"{output_dir}/{base_filename}_cm.png"
+    )
+    
+    print(f"Visualizations saved to {output_dir}")

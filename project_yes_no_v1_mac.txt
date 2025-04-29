@@ -1,0 +1,367 @@
+# Contents of project2_yes_no_mac.ipynb
+
+## Cell 1 (code)
+
+import copy
+import math
+import random
+import time
+from pathlib import Path
+import os
+import librosa
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import seaborn as sns
+import torch
+import torch.nn as nn
+import torch.nn.init as init
+from IPython.display import Audio, display
+from torch import optim
+from torch.optim.lr_scheduler import StepLR
+from torch.utils.data import DataLoader, TensorDataset
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+from tqdm import tqdm
+
+### Output:
+
+--------------------------------------------------------------------------------
+
+## Cell 2 (code)
+
+seed = 0
+random.seed(seed)
+torch.manual_seed(seed)
+
+# Check for MPS (Apple Silicon GPU) first since we're on Mac
+if torch.backends.mps.is_available() and torch.backends.mps.is_built():
+    device = torch.device("mps")
+    print("Using MPS (Apple Silicon GPU)")
+elif torch.cuda.is_available():
+    device = torch.device("cuda")
+    print("Using CUDA GPU") 
+else:
+    device = torch.device("cpu")
+    print("Using CPU")
+
+device
+
+### Output:
+
+Stream (stdout):
+Using MPS (Apple Silicon GPU)
+
+
+device(type='mps')
+
+--------------------------------------------------------------------------------
+
+## Cell 3 (markdown)
+
+## Load the dataset
+Data can be downloaded from http://download.tensorflow.org/data/speech_commands_v0.01.tar.gz
+
+--------------------------------------------------------------------------------
+
+## Cell 4 (code)
+
+from helpers.utils import load_from_path
+
+data_path = Path('data/speech_commands_v0.01')
+train_, valid_, test_ = load_from_path(data_path)
+
+print(f'training list has {len(train_)} elements')
+print(f'testing list has {len(test_)} elements')
+print(f'validation list has {len(valid_)} elements')
+
+### Output:
+
+Stream (stdout):
+training list has 51088 elements
+testing list has 6835 elements
+validation list has 6798 elements
+
+
+--------------------------------------------------------------------------------
+
+## Cell 5 (code)
+
+background_noise_list = []
+for root, _, files in os.walk(data_path / '_background_noise_'):
+    root_path = Path(root)
+    for file in files:
+        if not file.endswith('.wav'):
+            continue
+        data_entry = {
+            'file_path': root_path / file,
+            'label': file[:-4]
+        }
+        background_noise_list.append(data_entry)
+print(f'background noise files: {[noise["label"] for noise in background_noise_list]}')
+
+### Output:
+
+Stream (stdout):
+background noise files: ['pink_noise', 'white_noise', 'dude_miaowing', 'doing_the_dishes', 'exercise_bike', 'running_tap']
+
+
+--------------------------------------------------------------------------------
+
+## Cell 6 (markdown)
+
+## Use dataset builder
+
+--------------------------------------------------------------------------------
+
+## Cell 7 (code)
+
+from helpers.dataset_builder import DatasetBuilder
+
+builder = DatasetBuilder(train_, valid_, test_, seed)
+train, valid, test = builder \
+    .keep_labels(['yes', 'no'], make_rest_unknown=False) \
+    .build()
+
+label2id = builder.label2id
+id2label = builder.id2label
+
+### Output:
+
+Stream (stdout):
+train: 3713  | {'no': 1853, 'yes': 1860}
+  val:  531  | {'no': 270, 'yes': 261}
+ test:  508  | {'no': 252, 'yes': 256}
+
+
+--------------------------------------------------------------------------------
+
+## Cell 8 (markdown)
+
+### Data visualization – audio examples
+
+--------------------------------------------------------------------------------
+
+## Cell 9 (code)
+
+from helpers.utils import show_random_example_per_class
+
+show_random_example_per_class(train, 2)
+
+### Output:
+
+Stream (stdout):
+no
+
+
+<IPython.lib.display.Audio object>
+
+Stream (stdout):
+yes
+
+
+<IPython.lib.display.Audio object>
+
+<Figure size 900x300 with 2 Axes>
+
+--------------------------------------------------------------------------------
+
+## Cell 10 (code)
+
+from helpers.utils import preprocess_dataset
+
+X_train, y_train = preprocess_dataset(train, "train")
+X_val,   y_val   = preprocess_dataset(valid, "valid")
+X_test,  y_test  = preprocess_dataset(test,  "test")
+
+print("Train shape:", X_train.shape, y_train.shape)
+print("Validation shape:", X_val.shape, y_val.shape)
+print("Test shape:", X_test.shape, y_test.shape)
+
+### Output:
+
+Stream (stderr):
+Pre-processing train: 100%|██████████| 3713/3713 [00:03<00:00, 1131.53it/s]
+Pre-processing valid: 100%|██████████| 531/531 [00:00<00:00, 984.97it/s] 
+Pre-processing test: 100%|██████████| 508/508 [00:00<00:00, 967.72it/s] 
+
+Stream (stdout):
+Train shape: torch.Size([3713, 40, 101]) torch.Size([3713])
+Validation shape: torch.Size([531, 40, 101]) torch.Size([531])
+Test shape: torch.Size([508, 40, 101]) torch.Size([508])
+
+
+Stream (stderr):
+
+
+
+--------------------------------------------------------------------------------
+
+## Cell 11 (markdown)
+
+## Models and training
+
+--------------------------------------------------------------------------------
+
+## Cell 12 (code)
+
+batch_size = 64
+
+train_ds = TensorDataset(X_train, y_train)
+val_ds   = TensorDataset(X_val,   y_val)
+test_ds  = TensorDataset(X_test,  y_test)
+
+train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True,  drop_last=True)
+val_loader   = DataLoader(val_ds,   batch_size=batch_size, shuffle=False)
+test_loader  = DataLoader(test_ds,  batch_size=batch_size, shuffle=False)
+
+print(f"{len(train_loader)=}, {len(val_loader)=}, {len(test_loader)=}")
+
+### Output:
+
+Stream (stdout):
+len(train_loader)=58, len(val_loader)=9, len(test_loader)=8
+
+
+--------------------------------------------------------------------------------
+
+## Cell 13 (markdown)
+
+### Baseline CNN
+
+--------------------------------------------------------------------------------
+
+## Cell 14 (code)
+
+from helpers.utils import train_model, eval_model
+
+### Output:
+
+--------------------------------------------------------------------------------
+
+## Cell 15 (code)
+
+from helpers.models import ConvBaseline
+
+cnn_model  = ConvBaseline(len(id2label)).to(device)
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.Adam(cnn_model.parameters(), lr=3e-4)
+scheduler = StepLR(optimizer, step_size=6, gamma=0.5)
+
+epochs = 40
+history, best_val = train_model(
+    cnn_model,
+    device,
+    train_loader,
+    val_loader,
+    criterion,
+    optimizer,
+    scheduler=scheduler,
+    epochs=epochs,
+)
+print(f"Best val-accuracy: {best_val:.3%}")
+
+### Output:
+
+Stream (stdout):
+[01/40] train 0.3529/0.873 – val 0.2729/0.893
+[02/40] train 0.1667/0.951 – val 0.1558/0.945
+[03/40] train 0.1122/0.969 – val 0.1827/0.938
+[04/40] train 0.0892/0.973 – val 0.1303/0.959
+[05/40] train 0.0728/0.978 – val 0.0857/0.972
+[06/40] train 0.0532/0.985 – val 0.0700/0.976
+[07/40] train 0.0417/0.991 – val 0.0780/0.976
+[08/40] train 0.0438/0.986 – val 0.0651/0.976
+[09/40] train 0.0355/0.990 – val 0.0581/0.974
+⏹️  Early stopping after 9 epochs (no val-improve for 3 epochs).
+Best val-accuracy: 97.552%
+
+
+--------------------------------------------------------------------------------
+
+## Cell 16 (code)
+
+eval_model(device, cnn_model, test_loader, 'Baseline CNN', id2label)
+
+### Output:
+
+Stream (stdout):
+Test accuracy: 97.835%
+
+
+<Figure size 700x700 with 1 Axes>
+
+--------------------------------------------------------------------------------
+
+## Cell 17 (markdown)
+
+### Transformer
+
+--------------------------------------------------------------------------------
+
+## Cell 18 (code)
+
+from helpers.models import TransformerClassifier
+
+tfm_model = TransformerClassifier(
+    len(id2label),
+    n_mfcc=40,
+    d_model=128,
+    n_heads=4,
+    num_layers=4,
+    dim_ff=256,
+    dropout=0.1,
+    pool="cls"             # or "mean"
+).to(device)
+
+criterion  = nn.CrossEntropyLoss()
+optimizer  = optim.AdamW(tfm_model.parameters(), lr=2e-4, weight_decay=1e-2)
+scheduler  = StepLR(optimizer, step_size=8, gamma=0.5)
+
+### Output:
+
+--------------------------------------------------------------------------------
+
+## Cell 19 (code)
+
+epochs = 40
+history, best_val = train_model(
+    tfm_model,
+    device,
+    train_loader,
+    val_loader,
+    criterion,
+    optimizer,
+    scheduler=scheduler,
+    epochs=epochs,
+)
+print(f"Best val-accuracy: {best_val:.3%}")
+
+### Output:
+
+Stream (stdout):
+[01/40] train 0.4039/0.808 – val 0.1673/0.928
+[02/40] train 0.1558/0.945 – val 0.0820/0.976
+[03/40] train 0.1274/0.951 – val 0.0451/0.979
+[04/40] train 0.0990/0.963 – val 0.1026/0.951
+[05/40] train 0.0733/0.971 – val 0.0568/0.970
+[06/40] train 0.0553/0.978 – val 0.0432/0.979
+⏹️  Early stopping after 6 epochs (no val-improve for 3 epochs).
+Best val-accuracy: 97.928%
+
+
+--------------------------------------------------------------------------------
+
+## Cell 20 (code)
+
+eval_model(device, tfm_model, test_loader, 'Transformer', id2label)
+
+### Output:
+
+Stream (stdout):
+Test accuracy: 96.457%
+
+
+<Figure size 700x700 with 1 Axes>
+
+--------------------------------------------------------------------------------
+

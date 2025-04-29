@@ -1,0 +1,89 @@
+{
+  "run_config": {
+    "data_path": "data/speech_commands_v0.01",
+    "batch_size": 64,
+    "seed": 42,
+    "oversampling_factor": 5.0,
+    "undersampling_factor": 0.3,
+    "device": "mps",
+    "models": {
+      "lstm": {
+        "hidden_size": 256,
+        "num_layers": 3,
+        "bidirectional": false,
+        "dropout": 0.3,
+        "optimizer": "adam",
+        "learning_rate": 0.001,
+        "weight_decay": 1e-05,
+        "epochs": 50,
+        "scheduler": "step",
+        "scheduler_step_size": 10,
+        "scheduler_gamma": 0.5,
+        "early_stopping_patience": 10,
+        "input_size": 40
+      },
+      "gru": {
+        "hidden_size": 256,
+        "num_layers": 3,
+        "bidirectional": false,
+        "dropout": 0.3,
+        "optimizer": "adam",
+        "learning_rate": 0.001,
+        "weight_decay": 1e-05,
+        "epochs": 50,
+        "scheduler": "step",
+        "scheduler_step_size": 10,
+        "scheduler_gamma": 0.5,
+        "early_stopping_patience": 10,
+        "input_size": 40
+      },
+      "conformer": {
+        "d_model": 128,
+        "num_heads": 4,
+        "num_layers": 4,
+        "kernel_size": 15,
+        "expansion_factor": 4,
+        "dropout": 0.1,
+        "pool": "mean",
+        "optimizer": "adamw",
+        "learning_rate": 0.0005,
+        "weight_decay": 0.01,
+        "epochs": 50,
+        "scheduler": "cosine",
+        "scheduler_step_size": 10,
+        "scheduler_gamma": 0.5,
+        "early_stopping_patience": 10,
+        "n_mfcc": 40
+      }
+    }
+  },
+  "results": {
+    "lstm": {
+      "metrics": {
+        "accuracy": 0.996,
+        "precision": 0.996,
+        "recall": 0.996,
+        "f1": 0.996
+      },
+      "training_time": 50.6916139125824
+    },
+    "gru": {
+      "metrics": {
+        "accuracy": 0.998,
+        "precision": 1.0,
+        "recall": 0.996,
+        "f1": 0.9979959919839679
+      },
+      "training_time": 294.919615983963
+    },
+    "conformer": {
+      "metrics": {
+        "accuracy": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0
+      },
+      "training_time": 58.98124694824219
+    }
+  }
+}
