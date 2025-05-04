@@ -17,12 +17,15 @@ from torch.utils.data import DataLoader, TensorDataset
 from sklearn.metrics import confusion_matrix
 from tqdm import tqdm
 
-# Import from helper modules
-from helpers.dataset_builder import DatasetBuilder
-from helpers.utils import load_from_path, preprocess_dataset
 import helpers.models as models  # Using the added DualPathTransformer model
 
 from helpers.model_runner_utils import set_seed, get_device, train_epoch, validate, test_model, _save_results
+
+from helpers.speech_datasets import (
+    get_task1_dataloaders, get_task2_dataloaders,
+    get_task3_dataloaders, get_task4_dataloaders,
+)
+
 
 def save_results(config, history, best_val_acc, test_acc, conf_matrix, id2label, results_dir):
     model_name = f"dpt_d{config['d_model']}_h{config['n_heads']}_l{config['num_layers']}_dr{config['dropout']}"
@@ -208,57 +211,42 @@ def main():
     parser.add_argument('--search', action='store_true',
                       help='Perform hyperparameter search')
     
+
+    parser.add_argument(
+        "--task", type=int, default=1, choices=[1, 2, 3, 4],
+        help="Which dataset task definition to use"
+    )
+
     args = parser.parse_args()
-    
+
     # Set up device and seed
     device = get_device()
     set_seed(args.seed)
-    
-    # Load dataset
-    print(f"Loading dataset from {args.data_path}...")
-    train_, valid_, test_ = load_from_path(Path(args.data_path))
-    
-    # Prepare dataset
-    builder = DatasetBuilder(train_, valid_, test_, args.seed)
-    
-    if args.subset:
-        # Use only yes/no subset
-        train, valid, test = builder.keep_labels(['yes', 'no'], make_rest_unknown=False).build()
-    else:
-        # Use full dataset with standard command labels
-        standard_commands = ['yes', 'no', 'up', 'down', 'left', 'right', 
-                            'on', 'off', 'stop', 'go']
-        train, valid, test = builder \
-            .keep_labels(standard_commands, make_rest_unknown=True) \
-            .unknown_ratio(args.unknown_ratio) \
-            .build()
-            
-    # Extract features
-    print(f"Extracting features...")
-    X_train, y_train = preprocess_dataset(train, "train")
-    X_val, y_val = preprocess_dataset(valid, "valid")
-    X_test, y_test = preprocess_dataset(test, "test")
-    
-    print(f"Train shape: {X_train.shape}, {y_train.shape}")
-    print(f"Validation shape: {X_val.shape}, {y_val.shape}")
-    print(f"Test shape: {X_test.shape}, {y_test.shape}")
-    
-    # Prepare data loaders
-    train_ds = TensorDataset(X_train, y_train)
-    val_ds = TensorDataset(X_val, y_val)
-    test_ds = TensorDataset(X_test, y_test)
-    
-    train_loader = DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, drop_last=True)
-    val_loader = DataLoader(val_ds, batch_size=args.batch_size, shuffle=False)
-    test_loader = DataLoader(test_ds, batch_size=args.batch_size, shuffle=False)
-    
-    # Get input size from data
-    n_mfcc = X_train.shape[1]  # Number of MFCC features
+
+    known_10 = ['yes','no','up','down','left','right','on','off','stop','go']
+
+    task2loader = {
+        1: lambda: get_task1_dataloaders(
+                data_dir=args.data_path, known_commands=known_10,
+                batch_size=args.batch_size, seed=args.seed),
+        2: lambda: get_task2_dataloaders(
+                data_dir=args.data_path,
+                batch_size=args.batch_size, seed=args.seed),
+        3: lambda: get_task3_dataloaders(
+                data_dir=args.data_path, known_commands=known_10,
+                batch_size=args.batch_size, seed=args.seed),
+        4: lambda: get_task4_dataloaders(
+                data_dir=args.data_path, known_commands=known_10,
+                batch_size=args.batch_size, seed=args.seed),
+    }
+
+    train_loader, val_loader, test_loader, id2label = task2loader[args.task]()
+    input_size = 40
     
     # Create model configuration
     config = {
         'version': args.version,
-        'n_mfcc': n_mfcc,
+        'n_mfcc': input_size,
         'd_model': args.d_model,
         'n_heads': args.n_heads,
         'num_layers': args.num_layers,
@@ -331,7 +319,7 @@ def main():
             
             result = train_and_evaluate(
                 cfg, train_loader, val_loader, test_loader, 
-                device, builder.id2label, args.results_dir, 
+                device, id2label, args.results_dir, 
                 early_stopping_patience=args.early_stopping
             )
             results.append(result)
@@ -370,7 +358,7 @@ def main():
         
         larger_result = train_and_evaluate(
             larger_config, train_loader, val_loader, test_loader, 
-            device, builder.id2label, args.results_dir, 
+            device, id2label, args.results_dir, 
             early_stopping_patience=args.early_stopping
         )
         
@@ -403,7 +391,7 @@ def main():
         
         train_and_evaluate(
             config, train_loader, val_loader, test_loader, 
-            device, builder.id2label, args.results_dir, 
+            device, id2label, args.results_dir, 
             early_stopping_patience=args.early_stopping
         )
 
