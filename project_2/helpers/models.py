@@ -2,28 +2,37 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.init as init
-
+from typing import Optional
 
 class ConvBaseline(nn.Module):
     """
     Extremely small CNN => ~120 k params.
     """
-    def __init__(self, n_classes):
+    def __init__(self, n_classes, dropout=0.1):
         super().__init__()
+
+        def block(in_c, out_c):
+            """Conv-BN-ReLU helper"""
+            return nn.Sequential(
+                nn.Conv2d(in_c, out_c, kernel_size=3, padding=1, bias=False),
+                nn.BatchNorm2d(out_c),
+                nn.ReLU(inplace=True),
+            )
+        
         self.net = nn.Sequential(
-            nn.Conv2d(1, 16, kernel_size=3, padding=1),  nn.ReLU(),
-            nn.BatchNorm2d(16),
-            nn.Conv2d(16, 32, kernel_size=3, padding=1), nn.ReLU(),
-            nn.BatchNorm2d(32),
-            nn.MaxPool2d(2),                              # (20, 50)
+            block(1,   16),
+            block(16,  32),
+            nn.MaxPool2d(2),               # (20, 50)
 
-            nn.Conv2d(32, 64, kernel_size=3, padding=1), nn.ReLU(),
-            nn.BatchNorm2d(64),
-            nn.MaxPool2d(2),                              # (10, 25)
+            nn.Dropout2d(dropout),
 
-            nn.Conv2d(64, 128, kernel_size=3, padding=1), nn.ReLU(),
-            nn.BatchNorm2d(128),
-            nn.AdaptiveAvgPool2d((1, 1))                  # (128, 1, 1)
+            block(32,  64),
+            nn.MaxPool2d(2),               # (10, 25)
+
+            nn.Dropout2d(dropout),
+
+            block(64, 128),
+            nn.AdaptiveAvgPool2d(1)        # (1, 1)
         )
         self.classifier = nn.Linear(128, n_classes)
 
@@ -94,7 +103,6 @@ class TransformerClassifier(nn.Module):
         return self.classifier(rep)
     
 
-# Add this class to your existing models.py file
 
 class SimpleRNN(nn.Module):
     """
@@ -385,7 +393,7 @@ class ConformerClassifier(nn.Module):
         return self.classifier(rep)
     
 
-class DualPathTransformer(nn.Module):
+class DualPathTransformerV1(nn.Module):
     """
     Dual-Path Transformer (DPT) for speech command recognition.
     
@@ -590,9 +598,138 @@ class DualPathTransformerV2(nn.Module):
         
         # Classification
         return self.classifier(rep)
+
+
+class DualPathTransformer(nn.Module):
+    """
+    Dual-Path Transformer (fixed).
+
+    • Time-path  : tokens = time frames  (T)      – captures temporal patterns
+    • Freq-path  : tokens = mel bins     (n_mfcc) – captures spectral patterns
+    • Fusion     : vector-level (add / mul / concat / gated)
+    """
+
+    def __init__(self,
+                 n_classes: int,
+                 n_mfcc: int = 40,
+                 d_model: int = 128,
+                 n_heads: int = 4,
+                 num_layers: int = 4,
+                 dim_ff: int = 256,
+                 dropout: float = 0.1,
+                 fusion: str = "concat"):
+        super().__init__()
+
+        assert fusion in {"add", "mul", "concat", "gated"}, \
+            "fusion must be one of {'add','mul','concat','gated'}"
+        self.fusion = fusion
+
+        # ── 1.  Projections
+        self.time_proj = nn.Linear(n_mfcc, d_model, bias=False)  # (B,T,F) → (B,T,D)
+
+        # Depth-wise 1×1 conv collapses the **time** dimension for every mel bin
+        # Works for any T (no hard-coding 101)
+        self.freq_proj = nn.Conv1d(in_channels=n_mfcc,
+                                   out_channels=d_model,
+                                   kernel_size=1,
+                                   groups=n_mfcc,        # depth-wise
+                                   bias=False)           # (B,F,T) → (B,D,T)
+        # after transpose we'll have (B,F,D)
+
+        # ── 2.  Positional encodings (classic AIAIN)
+        self.time_pos = PositionalEncoding(d_model, dropout)
+        self.freq_pos = PositionalEncoding(d_model, dropout)
+
+        # ── 3.  Encoder stacks (split layers 50 : 50)
+        n_time = num_layers // 2
+        n_freq = num_layers - n_time
+
+        enc = lambda: nn.TransformerEncoderLayer(
+            d_model, n_heads, dim_feedforward=dim_ff,
+            dropout=dropout, batch_first=True)
+
+        self.time_enc = nn.TransformerEncoder(enc(), num_layers=n_time)
+        self.freq_enc = nn.TransformerEncoder(enc(), num_layers=n_freq)
+
+        # ── 4.  Fusion  ▸ 2-layer MLP if concat / gated
+        if fusion in {"concat", "gated"}:
+            self.fusion_proj = nn.Sequential(
+                nn.Linear(d_model * 2, d_model),
+                nn.GELU(),
+                nn.Dropout(dropout),
+                nn.Linear(d_model, d_model)
+            )
+        if fusion == "gated":
+            self.gate = nn.Sequential(
+                nn.Linear(d_model * 2, d_model),
+                nn.Sigmoid()
+            )
+
+        # ── 5.  Classifier
+        self.classifier = nn.Linear(d_model, n_classes)
+
+        # ── 6.  Weight init (Xavier / He where appropriate)
+        self.apply(self._init_weights)
+
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _init_weights(m):
+        if isinstance(m, (nn.Linear, nn.Conv1d)):
+            nn.init.xavier_uniform_(m.weight)
+            if getattr(m, "bias", None) is not None:
+                nn.init.zeros_(m.bias)
+
+    # ------------------------------------------------------------------
+    def _pad_mask(self, lengths: torch.Tensor, max_len: int) -> torch.BoolTensor:
+        idx = torch.arange(max_len, device=lengths.device).expand(len(lengths), -1)
+        return idx >= lengths.unsqueeze(1)
+
+    # ------------------------------------------------------------------
+    def forward(self,
+                x: torch.Tensor,                 # (B, n_mfcc, T)
+                lengths: Optional[torch.Tensor] = None):
+        B, F, T = x.shape
+
+        # ── Time-path ────────────────────────────────────────────────
+        t = x.transpose(1, 2)                     # (B, T, F)
+        t = self.time_proj(t)                     # (B, T, D)
+        t = self.time_pos(t)                      # + positional + dropout
+
+        time_mask = None
+        if lengths is not None:
+            time_mask = self._pad_mask(lengths, T)
+
+        t = self.time_enc(t, src_key_padding_mask=time_mask)  # (B, T, D)
+        t_vec = t.mean(dim=1)                                 # (B, D)
+
+        # ── Freq-path ───────────────────────────────────────────────
+        f = self.freq_proj(x)                      # (B, D, T)
+        f = f.transpose(1, 2)                      # (B, T, D)  still time-axis
+        f = f.transpose(1, 2)                      # now (B, D, F)
+        f = f.transpose(1, 2)                      # (B, F, D) tokens = F bins
+        f = self.freq_pos(f)                       # positional + dropout
+        f = self.freq_enc(f)                       # (B, F, D)
+        f_vec = f.mean(dim=1)                      # (B, D)
+
+        # ── Fusion ─────────────────────────────────────────────────
+        if self.fusion == "add":
+            h = t_vec + f_vec
+        elif self.fusion == "mul":
+            h = t_vec * f_vec
+        elif self.fusion == "concat":
+            h = torch.cat([t_vec, f_vec], dim=-1)
+            h = self.fusion_proj(h)
+        else:  # gated
+            cat = torch.cat([t_vec, f_vec], dim=-1)
+            g   = self.gate(cat)                  # (B, D)
+            h   = g * t_vec + (1 - g) * f_vec
+            h   = self.fusion_proj(torch.cat([t_vec, f_vec], dim=-1))
+
+        # ── Classification ─────────────────────────────────────────
+        return self.classifier(h)
     
 
-class HierarchicalTransformerFP(nn.Module):
+class HierarchicalTransformerFPV1(nn.Module):
     """
     Hierarchical Transformer with Feature Pyramid (HT-FP) for speech command recognition.
     
@@ -924,3 +1061,110 @@ class HierarchicalTransformerFPV2(nn.Module):
         
         # Classification
         return self.classifier(rep)
+
+class HierarchicalTransformer(nn.Module):
+    """
+    3-level time-resolution pyramid:
+
+        level-0 : T     frames  (no pooling)       –  L0 layers
+        level-1 : T/2   frames  (avg-pool ÷2)      –  L1 layers
+        level-2 : T/4   frames  (avg-pool ÷4)      –  L2 layers
+
+    Each level gets its *own* tiny transformer encoder (1–2 layers).
+    After global mean-pool, the three vectors are fused with a
+    learnable softmax weight (paper-style “weighted sum”).
+    """
+    def __init__(self,
+                 n_classes: int,
+                 n_mfcc: int = 40,
+                 d_model: int = 128,
+                 n_heads: int = 4,
+                 num_layers: int = 6,
+                 dim_ff: int = 256,
+                 dropout: float = 0.1):
+        super().__init__()
+
+        # -- layer split: 50 % / 30 % / 20 % (≥1 each)
+        l0 = max(1, num_layers // 2)
+        l1 = max(1, num_layers // 3)
+        l2 = max(1, num_layers - l0 - l1)
+
+        enc = lambda: nn.TransformerEncoderLayer(
+            d_model, n_heads, dim_ff, dropout, batch_first=True)
+
+        self.enc0 = nn.TransformerEncoder(enc(), l0)
+        self.enc1 = nn.TransformerEncoder(enc(), l1)
+        self.enc2 = nn.TransformerEncoder(enc(), l2)
+
+        # shared projection & positional enc (weight-tying keeps params low)
+        self.proj = nn.Linear(n_mfcc, d_model, bias=False)
+        self.pe   = PositionalEncoding(d_model, dropout)
+
+        # learnable fusion weights (softmax to 1)
+        self.level_w = nn.Parameter(torch.ones(3))
+
+        # classifier
+        self.classifier = nn.Linear(d_model, n_classes)
+
+        self.apply(self._init)
+
+    # ----------------------------------------------
+    @staticmethod
+    def _init(m):
+        if isinstance(m, nn.Linear):
+            nn.init.xavier_uniform_(m.weight)
+            if m.bias is not None:
+                nn.init.zeros_(m.bias)
+
+    # ----------------------------------------------
+    def _pad_mask(self, lengths: torch.Tensor, L: int) -> torch.BoolTensor:
+        idx = torch.arange(L, device=lengths.device).expand(len(lengths), -1)
+        return idx >= lengths.unsqueeze(1)
+
+    # ----------------------------------------------
+    def forward(self,
+                x: torch.Tensor,                 # (B, F, T)
+                lengths: Optional[torch.Tensor] = None):
+
+        # shared projection (B,T,F) -> (B,T,D)
+        def proj(seq):
+            return self.proj(seq.transpose(1, 2))     # (B,T,D)
+
+        B, F, T = x.shape
+
+        # ---------- level-0 (no pooling) ----------
+        l0_in   = proj(x)                             # (B,T,D)
+        l0_in   = self.pe(l0_in)
+        mask0   = self._pad_mask(lengths, T) if lengths is not None else None
+        l0_out  = self.enc0(l0_in, src_key_padding_mask=mask0)
+        v0      = l0_out.mean(dim=1)                  # (B,D)
+
+        # ---------- level-1 (T//2) ----------
+        l1_len  = (T + 1) // 2
+        l1_seq  = F.avg_pool1d(x, kernel_size=2, stride=2, ceil_mode=True)
+        l1_in   = proj(l1_seq)                        # (B, T/2, D)
+        l1_in   = self.pe(l1_in)
+        if lengths is not None:
+            l1_mask = self._pad_mask((lengths + 1) // 2, l1_len)
+        else:
+            l1_mask = None
+        l1_out  = self.enc1(l1_in, src_key_padding_mask=l1_mask)
+        v1      = l1_out.mean(dim=1)
+
+        # ---------- level-2 (T//4) ----------
+        l2_len  = (T + 3) // 4
+        l2_seq  = F.avg_pool1d(x, kernel_size=4, stride=4, ceil_mode=True)
+        l2_in   = proj(l2_seq)
+        l2_in   = self.pe(l2_in)
+        if lengths is not None:
+            l2_mask = self._pad_mask((lengths + 3) // 4, l2_len)
+        else:
+            l2_mask = None
+        l2_out  = self.enc2(l2_in, src_key_padding_mask=l2_mask)
+        v2      = l2_out.mean(dim=1)
+
+        # ---------- fusion ----------
+        w = torch.softmax(self.level_w, dim=0)        # 3 scalars
+        h = w[0]*v0 + w[1]*v1 + w[2]*v2               # (B,D)
+
+        return self.classifier(h)
