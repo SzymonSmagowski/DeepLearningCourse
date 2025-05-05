@@ -1,0 +1,22 @@
+{
+  "config": {
+    "n_mfcc": 40,
+    "d_model": 256,
+    "n_heads": 8,
+    "num_layers": 6,
+    "dim_ff": 1024,
+    "dropout": 0.1,
+    "pool": "cls",
+    "optimizer": "adamw",
+    "learning_rate": 0.0005,
+    "weight_decay": 0.01,
+    "epochs": 50,
+    "scheduler": "cosine",
+    "scheduler_step_size": 10,
+    "scheduler_gamma": 0.5
+  },
+  "result": {
+    "val_acc": 0.9247186651144742,
+    "test_acc": 0.9279314374756525
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "best_config": {
+    "n_mfcc": 40,
+    "d_model": 64,
+    "num_heads": 2,
+    "num_layers": 2,
+    "kernel_size": 31,
+    "expansion_factor": 2,
+    "dropout": 0.1,
+    "pool": "mean",
+    "optimizer": "adamw",
+    "learning_rate": 0.0005,
+    "weight_decay": 0.01,
+    "epochs": 50,
+    "scheduler": "cosine",
+    "scheduler_step_size": 10,
+    "scheduler_gamma": 0.5
+  },
+  "best_result": {
+    "val_acc": 1.0,
+    "test_acc": 1.0
+  },
+  "larger_config": {
+    "n_mfcc": 40,
+    "d_model": 128,
+    "num_heads": 4,
+    "num_layers": 4,
+    "kernel_size": 31,
+    "expansion_factor": 2,
+    "dropout": 0.1,
+    "pool": "mean",
+    "optimizer": "adamw",
+    "learning_rate": 0.0005,
+    "weight_decay": 0.01,
+    "epochs": 50,
+    "scheduler": "cosine",
+    "scheduler_step_size": 10,
+    "scheduler_gamma": 0.5
+  },
+  "larger_result": {
+    "val_acc": 0.99987320907823,
+    "test_acc": 0.9989918084436042
+  }
+}

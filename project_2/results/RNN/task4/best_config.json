@@ -1,0 +1,21 @@
+{
+  "config": {
+    "model_type": "rnn",
+    "input_size": 40,
+    "hidden_size": 64,
+    "num_layers": 2,
+    "bidirectional": false,
+    "dropout": 0.1,
+    "optimizer": "adam",
+    "learning_rate": 0.001,
+    "weight_decay": 1e-05,
+    "epochs": 30,
+    "scheduler": "step",
+    "scheduler_step_size": 10,
+    "scheduler_gamma": 0.5
+  },
+  "result": {
+    "val_acc": 0.19829258828094684,
+    "test_acc": 0.19322165952473705
+  }
+}

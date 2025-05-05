@@ -1,0 +1,44 @@
+{
+  "best_config": {
+    "n_mfcc": 40,
+    "d_model": 256,
+    "num_heads": 8,
+    "num_layers": 6,
+    "kernel_size": 15,
+    "expansion_factor": 4,
+    "dropout": 0.1,
+    "pool": "mean",
+    "optimizer": "adamw",
+    "learning_rate": 0.0005,
+    "weight_decay": 0.01,
+    "epochs": 50,
+    "scheduler": "cosine",
+    "scheduler_step_size": 10,
+    "scheduler_gamma": 0.5
+  },
+  "best_result": {
+    "val_acc": 0.9569266589057043,
+    "test_acc": 0.9649396182313985
+  },
+  "larger_config": {
+    "n_mfcc": 40,
+    "d_model": 512,
+    "num_heads": 16,
+    "num_layers": 8,
+    "kernel_size": 15,
+    "expansion_factor": 4,
+    "dropout": 0.1,
+    "pool": "mean",
+    "optimizer": "adamw",
+    "learning_rate": 0.0005,
+    "weight_decay": 0.01,
+    "epochs": 50,
+    "scheduler": "cosine",
+    "scheduler_step_size": 10,
+    "scheduler_gamma": 0.5
+  },
+  "larger_result": {
+    "val_acc": 0.9538222739619713,
+    "test_acc": 0.9633813790416829
+  }
+}
