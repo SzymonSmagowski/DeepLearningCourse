@@ -1,6 +1,8 @@
 **/.ipynb_checkpoints
 **/__pycache__
 
+data
+
 deep_learning/
 
 /project_1/data/
@@ -8,4 +10,8 @@ deep_learning/
 
 .env
 
+*DS_Store
+
 deep-learning/
+
+checkpoints
