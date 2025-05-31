@@ -1,0 +1,51 @@
+# Fast GAN configuration for testing
+model_type: stylegan2
+image_size: 64
+latent_dim: 128
+n_layers: 4
+channel_multiplier: 1
+
+# Generator
+g_channels: [256, 256, 128, 64, 32]
+style_dim: 128
+n_mlp: 4
+
+# Discriminator
+d_channels: [32, 64, 128, 256, 256]
+mbstd_group_size: 4
+
+# Training
+batch_size: 32
+g_lr: 0.0002  # Reduced for stability
+d_lr: 0.0002  # Reduced for stability
+r1_gamma: 10.0  # Increased for better regularization
+pl_weight: 2.0
+num_epochs: 10
+g_reg_interval: 8
+d_reg_interval: 16
+early_stopping_patience: 2
+
+# Augmentation
+ada_target: 0.6
+ada_length: 50000
+augment_p: 0.0  # Will be adjusted by ADA
+
+# Data
+data_root: data/processed_cats_128
+num_workers: 4
+pin_memory: false
+max_train_samples: 3000
+
+# Logging
+log_interval: 50
+sample_interval: 200
+checkpoint_interval: 500
+num_samples: 4
+
+# Paths
+checkpoint_dir: outputs/checkpoints/gan_fast
+sample_dir: outputs/generated_samples/gan_fast
+log_dir: outputs/logs/gan_fast
+
+# Device
+device: mps

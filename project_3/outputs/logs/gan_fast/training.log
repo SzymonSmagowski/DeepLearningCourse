@@ -1,0 +1,52 @@
+2025-05-31 09:37:02,872 - src.trainers.train_gan - INFO - Generator parameters: 19,224,329
+2025-05-31 09:37:02,872 - src.trainers.train_gan - INFO - Discriminator parameters: 23,407,361
+2025-05-31 09:37:02,872 - src.trainers.train_gan - INFO - Mapping parameters: 66,048
+2025-05-31 09:37:02,872 - src.trainers.train_gan - INFO - Total parameters: 42,697,738
+2025-05-31 09:37:03,021 - src.trainers.train_gan - INFO - Starting training...
+2025-05-31 09:38:49,689 - src.trainers.train_gan - INFO - Generator parameters: 19,224,329
+2025-05-31 09:38:49,689 - src.trainers.train_gan - INFO - Discriminator parameters: 23,407,361
+2025-05-31 09:38:49,690 - src.trainers.train_gan - INFO - Mapping parameters: 66,048
+2025-05-31 09:38:49,690 - src.trainers.train_gan - INFO - Total parameters: 42,697,738
+2025-05-31 09:38:49,836 - src.trainers.train_gan - INFO - Starting training...
+2025-05-31 09:39:23,541 - src.trainers.train_gan - INFO - Checkpoint saved: outputs/checkpoints/gan_fast/checkpoint_step_0.pt
+2025-05-31 09:40:54,927 - src.trainers.train_gan - INFO - Generator parameters: 19,224,329
+2025-05-31 09:40:54,927 - src.trainers.train_gan - INFO - Discriminator parameters: 23,407,361
+2025-05-31 09:40:54,927 - src.trainers.train_gan - INFO - Mapping parameters: 66,048
+2025-05-31 09:40:54,927 - src.trainers.train_gan - INFO - Total parameters: 42,697,738
+2025-05-31 09:40:55,079 - src.trainers.train_gan - INFO - Starting training...
+2025-05-31 09:41:28,077 - src.trainers.train_gan - INFO - Checkpoint saved: outputs/checkpoints/gan_fast/checkpoint_step_0.pt
+2025-05-31 09:48:54,817 - src.trainers.train_gan - INFO - Epoch 0: D loss = nan, G loss = nan
+2025-05-31 09:50:19,095 - src.trainers.train_gan - INFO - Generator parameters: 19,224,329
+2025-05-31 09:50:19,095 - src.trainers.train_gan - INFO - Discriminator parameters: 23,407,361
+2025-05-31 09:50:19,095 - src.trainers.train_gan - INFO - Mapping parameters: 66,048
+2025-05-31 09:50:19,095 - src.trainers.train_gan - INFO - Total parameters: 42,697,738
+2025-05-31 09:50:19,247 - src.trainers.train_gan - INFO - Starting training...
+2025-05-31 09:50:51,856 - src.trainers.train_gan - INFO - Checkpoint saved: outputs/checkpoints/gan_fast/checkpoint_step_0.pt
+2025-05-31 09:58:24,307 - src.trainers.train_gan - INFO - Epoch 0: D loss = nan, G loss = nan
+2025-05-31 10:01:18,522 - src.trainers.train_gan - INFO - Generator parameters: 19,224,329
+2025-05-31 10:01:18,522 - src.trainers.train_gan - INFO - Discriminator parameters: 23,407,361
+2025-05-31 10:01:18,522 - src.trainers.train_gan - INFO - Mapping parameters: 66,048
+2025-05-31 10:01:18,522 - src.trainers.train_gan - INFO - Total parameters: 42,697,738
+2025-05-31 10:01:18,668 - src.trainers.train_gan - INFO - Starting training...
+2025-05-31 10:01:51,413 - src.trainers.train_gan - INFO - Checkpoint saved: outputs/checkpoints/gan_fast/checkpoint_step_0.pt
+2025-05-31 10:09:31,515 - src.trainers.train_gan - INFO - Epoch 0: D loss = 0.2948, G loss = 4.9973
+2025-05-31 10:10:29,371 - src.trainers.train_gan - INFO - Epoch 0: FID = 126.01
+2025-05-31 10:10:30,071 - src.trainers.train_gan - INFO - Checkpoint saved: outputs/checkpoints/gan_fast/checkpoint_step_93.pt
+2025-05-31 10:10:30,706 - src.trainers.train_gan - INFO - New best FID: 126.01
+2025-05-31 10:18:38,512 - src.trainers.train_gan - INFO - Epoch 1: D loss = 0.0656, G loss = 7.6249
+2025-05-31 10:26:33,913 - src.trainers.train_gan - INFO - Epoch 2: D loss = 0.0586, G loss = 8.5909
+2025-05-31 10:34:45,858 - src.trainers.train_gan - INFO - Epoch 3: D loss = 0.0424, G loss = 8.4061
+2025-05-31 10:42:47,610 - src.trainers.train_gan - INFO - Epoch 4: D loss = 0.0331, G loss = 7.7015
+2025-05-31 10:45:37,808 - src.trainers.train_gan - INFO - Checkpoint saved: outputs/checkpoints/gan_fast/checkpoint_step_500.pt
+2025-05-31 10:50:21,764 - src.trainers.train_gan - INFO - Epoch 5: D loss = 0.0253, G loss = 8.4748
+2025-05-31 10:51:11,649 - src.trainers.train_gan - INFO - Epoch 5: FID = 175.36
+2025-05-31 10:51:11,649 - src.trainers.train_gan - INFO - No improvement for 1 epoch(s)
+2025-05-31 10:59:06,160 - src.trainers.train_gan - INFO - Epoch 6: D loss = 0.0207, G loss = 8.3279
+2025-05-31 11:06:48,196 - src.trainers.train_gan - INFO - Epoch 7: D loss = 0.0290, G loss = 8.0748
+2025-05-31 11:14:43,634 - src.trainers.train_gan - INFO - Epoch 8: D loss = 0.0174, G loss = 8.0853
+2025-05-31 11:22:53,844 - src.trainers.train_gan - INFO - Epoch 9: D loss = 0.0276, G loss = 8.3596
+2025-05-31 11:28:43,129 - src.trainers.train_gan - INFO - Checkpoint saved: outputs/checkpoints/gan_fast/checkpoint_step_1000.pt
+2025-05-31 11:30:38,419 - src.trainers.train_gan - INFO - Epoch 10: D loss = nan, G loss = nan
+2025-05-31 11:31:28,081 - src.trainers.train_gan - INFO - Epoch 10: FID = 39.77
+2025-05-31 11:31:28,773 - src.trainers.train_gan - INFO - Checkpoint saved: outputs/checkpoints/gan_fast/checkpoint_step_1023.pt
+2025-05-31 11:31:29,180 - src.trainers.train_gan - INFO - New best FID: 39.77

@@ -1,0 +1,3 @@
+2025-05-31 08:30:42,962 - src.trainers.train_diffusion - INFO - Total parameters: 506,300,678
+2025-05-31 08:30:42,962 - src.trainers.train_diffusion - INFO - Trainable parameters: 253,150,339
+2025-05-31 08:30:43,223 - src.trainers.train_diffusion - INFO - Starting training...

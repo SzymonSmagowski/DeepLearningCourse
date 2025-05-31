@@ -1,0 +1,35 @@
+2025-05-31 08:52:09,922 - src.trainers.train_diffusion - INFO - Total parameters: 21,204,742
+2025-05-31 08:52:09,923 - src.trainers.train_diffusion - INFO - Trainable parameters: 10,602,371
+2025-05-31 08:52:10,153 - src.trainers.train_diffusion - INFO - Starting training...
+2025-05-31 08:53:11,409 - src.trainers.train_diffusion - INFO - Epoch 0: Train loss = 0.4775
+2025-05-31 08:53:41,126 - src.trainers.train_diffusion - INFO - Epoch 0: Val loss = 0.1790
+2025-05-31 08:53:41,832 - src.trainers.train_diffusion - INFO - New best validation loss: 0.1790
+2025-05-31 08:54:42,057 - src.trainers.train_diffusion - INFO - Epoch 1: Train loss = 0.2454
+2025-05-31 08:55:11,559 - src.trainers.train_diffusion - INFO - Epoch 1: Val loss = 0.1443
+2025-05-31 08:55:12,129 - src.trainers.train_diffusion - INFO - New best validation loss: 0.1443
+2025-05-31 08:56:11,171 - src.trainers.train_diffusion - INFO - Epoch 2: Train loss = 0.2048
+2025-05-31 08:56:40,773 - src.trainers.train_diffusion - INFO - Epoch 2: Val loss = 0.1261
+2025-05-31 08:56:41,326 - src.trainers.train_diffusion - INFO - New best validation loss: 0.1261
+2025-05-31 08:57:40,576 - src.trainers.train_diffusion - INFO - Epoch 3: Train loss = 0.1949
+2025-05-31 08:58:10,102 - src.trainers.train_diffusion - INFO - Epoch 3: Val loss = 0.1186
+2025-05-31 08:58:10,665 - src.trainers.train_diffusion - INFO - New best validation loss: 0.1186
+2025-05-31 08:59:09,849 - src.trainers.train_diffusion - INFO - Epoch 4: Train loss = 0.1903
+2025-05-31 08:59:39,423 - src.trainers.train_diffusion - INFO - Epoch 4: Val loss = 0.1141
+2025-05-31 08:59:40,002 - src.trainers.train_diffusion - INFO - New best validation loss: 0.1141
+2025-05-31 09:00:39,439 - src.trainers.train_diffusion - INFO - Epoch 5: Train loss = 0.1836
+2025-05-31 09:01:09,008 - src.trainers.train_diffusion - INFO - Epoch 5: Val loss = 0.1039
+2025-05-31 09:01:09,563 - src.trainers.train_diffusion - INFO - New best validation loss: 0.1039
+2025-05-31 09:02:08,848 - src.trainers.train_diffusion - INFO - Epoch 6: Train loss = 0.1835
+2025-05-31 09:02:38,350 - src.trainers.train_diffusion - INFO - Epoch 6: Val loss = 0.1041
+2025-05-31 09:03:37,582 - src.trainers.train_diffusion - INFO - Epoch 7: Train loss = 0.1808
+2025-05-31 09:04:07,095 - src.trainers.train_diffusion - INFO - Epoch 7: Val loss = 0.0977
+2025-05-31 09:04:07,659 - src.trainers.train_diffusion - INFO - New best validation loss: 0.0977
+2025-05-31 09:05:06,807 - src.trainers.train_diffusion - INFO - Epoch 8: Train loss = 0.1766
+2025-05-31 09:05:36,349 - src.trainers.train_diffusion - INFO - Epoch 8: Val loss = 0.0968
+2025-05-31 09:05:36,936 - src.trainers.train_diffusion - INFO - New best validation loss: 0.0968
+2025-05-31 09:06:36,045 - src.trainers.train_diffusion - INFO - Epoch 9: Train loss = 0.1722
+2025-05-31 09:07:05,549 - src.trainers.train_diffusion - INFO - Epoch 9: Val loss = 0.0971
+2025-05-31 09:07:06,797 - src.trainers.train_diffusion - INFO - Training completed!
+2025-05-31 09:36:33,877 - src.trainers.train_diffusion - INFO - Total parameters: 21,204,742
+2025-05-31 09:36:33,877 - src.trainers.train_diffusion - INFO - Trainable parameters: 10,602,371
+2025-05-31 09:36:34,043 - src.trainers.train_diffusion - INFO - Starting training...

@@ -1,0 +1,47 @@
+# Fast configuration for testing and development
+model_type: ddpm
+image_size: 64  # Smaller images = 4x faster
+in_channels: 3
+out_channels: 3
+model_channels: 64  # Smaller model
+num_res_blocks: 1  # Fewer blocks
+attention_resolutions: [8]  # Less attention
+dropout: 0.1
+channel_mult: [1, 2, 4]  # Fewer layers
+num_heads: 4
+use_scale_shift_norm: true
+
+# Diffusion
+num_timesteps: 100  # 10x faster sampling!
+beta_schedule: linear
+beta_start: 0.0001
+beta_end: 0.02
+
+# Training
+batch_size: 64  # Larger batch = fewer iterations
+learning_rate: 0.0002
+num_epochs: 10  # Just for testing
+gradient_accumulation_steps: 1
+ema_decay: 0.9999
+mixed_precision: true
+early_stopping_patience: 2  # Stop if no improvement for 2 epochs
+
+# Data
+data_root: data/processed_cats_128
+num_workers: 4
+pin_memory: false  # Disable for MPS
+max_train_samples: 3000  # Use subset
+
+# Logging
+log_interval: 50
+sample_interval: 500  # Less frequent sampling
+checkpoint_interval: 1000
+num_samples: 4  # Fewer samples
+
+# Paths
+checkpoint_dir: outputs/checkpoints/diffusion_fast
+sample_dir: outputs/generated_samples/diffusion_fast
+log_dir: outputs/logs/diffusion_fast
+
+# Device
+device: mps
