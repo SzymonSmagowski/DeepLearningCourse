@@ -1,12 +1,12 @@
 **/.ipynb_checkpoints
 **/__pycache__
 
-data
 
 deep_learning/
 
 /project_1/data/
 /project_1/models/
+project_3/data/
 
 .env
 
