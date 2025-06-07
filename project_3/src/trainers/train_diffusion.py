@@ -248,20 +248,21 @@ class DiffusionTrainer:
     
     def save_checkpoint(self, is_best: bool = False):
         """Save model checkpoint."""
-        checkpoint_path = Path(self.config.checkpoint_dir) / f'checkpoint_step_{self.global_step}.pt'
         
-        save_checkpoint(
-            model=self.model,
-            optimizer=self.optimizer,
-            epoch=self.epoch,
-            step=self.global_step,
-            checkpoint_path=str(checkpoint_path),
-            scheduler=self.scheduler,
-            additional_info={
-                'best_val_loss': self.best_val_loss,
-                'config': self.config._config
-            }
-        )
+        if self.config.checkpoint_interval != 0:
+            checkpoint_path = Path(self.config.checkpoint_dir) / f'checkpoint_step_{self.global_step}.pt'
+            save_checkpoint(
+                model=self.model,
+                optimizer=self.optimizer,
+                epoch=self.epoch,
+                step=self.global_step,
+                checkpoint_path=str(checkpoint_path),
+                scheduler=self.scheduler,
+                additional_info={
+                    'best_val_loss': self.best_val_loss,
+                    'config': self.config._config
+                }
+            )
         
         if is_best:
             best_path = Path(self.config.checkpoint_dir) / 'best_model.pt'
