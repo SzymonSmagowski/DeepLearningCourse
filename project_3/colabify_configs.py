@@ -19,13 +19,15 @@ try:
 except ImportError:
     sys.exit("PyYAML is required:  pip install pyyaml")
 
-def patch_cfg(path: Path, prefix: Path) -> None:
+def patch_cfg(path: Path, prefix: Path, checkpoint_interval: int) -> None:
     """Load YAML, fix values, and write back."""
     with path.open("r") as f:
         cfg = yaml.safe_load(f)
 
     # 1. Force CUDA
     cfg["device"] = "cuda"
+    if checkpoint_interval is not None:
+        cfg["checkpoint_interval"] = int(checkpoint_interval)
 
     # 2. Prepend prefix to every *_dir key
     for key, val in list(cfg.items()):
@@ -41,12 +43,14 @@ def main() -> None:
     p = argparse.ArgumentParser(description="Make YAML configs Colab-friendly")
     p.add_argument("--prefix", required=True,
                    help="Prefix inside MyDrive, e.g. /content/drive/MyDrive/project3")
+    p.add_argument("--checkpoint_interval")
     p.add_argument("--config-dir", default="configs",
                    help="Directory to scan for YAML files (default: ./configs)")
     args = p.parse_args()
 
     prefix = Path(args.prefix).expanduser()
     cfg_dir = Path(args.config_dir).expanduser()
+    checkpoint_interval = args.checkpoint_interval
 
     if not cfg_dir.is_dir():
         sys.exit(f"{cfg_dir} is not a directory")
@@ -56,7 +60,7 @@ def main() -> None:
         sys.exit(f"No YAML files found in {cfg_dir}")
 
     for yp in yaml_paths:
-        patch_cfg(yp, prefix)
+        patch_cfg(yp, prefix, checkpoint_interval)
         print(f"[OK] patched {yp.relative_to(cfg_dir.parent)}")
 
 if __name__ == "__main__":
