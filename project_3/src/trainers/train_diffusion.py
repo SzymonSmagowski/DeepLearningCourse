@@ -172,14 +172,17 @@ class DiffusionTrainer:
             epoch_losses.append(loss.item())
             pbar.set_postfix({'loss': loss.item()})
             
-            if self.global_step % self.config.log_interval == 0:
-                self.log_training_step(loss_dict)
+            if self.config.log_interval != 0:
+                if self.global_step % self.config.log_interval == 0:
+                    self.log_training_step(loss_dict)
             
-            if self.global_step % self.config.sample_interval == 0:
-                self.generate_samples()
+            if self.config.sample_interval != 0:
+                if self.global_step % self.config.sample_interval == 0:
+                    self.generate_samples()
             
-            if self.global_step % self.config.checkpoint_interval == 0:
-                self.save_checkpoint()
+            if self.config.checkpoint_interval != 0:
+                if self.global_step % self.config.checkpoint_interval == 0:
+                    self.save_checkpoint()
             
             self.global_step += 1
         
